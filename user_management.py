@@ -1,8 +1,11 @@
 from database import create_users_table, connect_db
+from log_management import LogManagement
 import hashlib
 
 # Call this function once to create the table
 create_users_table()
+
+log_manager = LogManagement()
 
 # Hash the password using SHA-256
 def hash_password(password):
@@ -23,6 +26,9 @@ def register_user(username, password):
     cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
     conn.commit()
     conn.close()
+    
+    #insert REGISTER into logs table
+    log_manager.insert_log(username, "REGISTER")
     return "User registered successfully."
 
 # Log in a user
@@ -35,8 +41,12 @@ def login_user(username, password):
     user_data = cursor.fetchone()
     
     if user_data and user_data[0] == hash_password(password):
+        #insert LOGIN log into logs table
+        log_manager.insert_log(username, "LOGIN", "Successful log in")
         return "Login successful."
     else:
+        #insert INVALID_LOGIN log into logs table
+        log_manager.insert_log(username, "INVALID_LOGIN", "Invalid log in")
         return "Invalid username or password."
 
 # Reset user password
@@ -54,4 +64,7 @@ def reset_password(username, new_password):
     cursor.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_password, username))
     conn.commit()
     conn.close()
+
+    #insert CHANGE log into logs table
+    log_manager.insert_log(username, "CHANGE", "Password changed")
     return "Password reset successfully."
