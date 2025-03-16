@@ -1,5 +1,21 @@
 from user_management import register_user, login_user, reset_password
 
+def encrypt_file(input_file, key): #CAN CHANGE TO OTHER METHOD (TEMP STRUCTURE)
+    cipher = AES.new(key, AES.MODE_CBC)
+    iv = cipher.iv 
+    with open(input_file, 'rb') as f:
+        plaintext = f.read()
+    
+    ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
+    
+    return iv + ciphertext
+
+def send_to_server(encrypted_data):
+    url = '{address}' 
+    files = {'file': ('encrypted_file.enc', encrypted_data)}
+    response = requests.post(url, files=files)
+    return response.text
+
 def main():
     while True:
         print("\nUser Management System")
@@ -7,7 +23,8 @@ def main():
         print("2. Login")
         print("3. Reset Password")
         print("4. Check Logs")
-        print("5. Exit")
+        print("5. File Send")
+        print("6. Exit")
         choice = input("Choose an option: ")
 
         if choice == '1':
@@ -31,7 +48,18 @@ def main():
             #2. For user
             #   2.1 user already logged in -> find username and do insert_log()
             #   2.2 not logged in -> let user log in first.
+        
         elif choice == '5':
+            key = os.urandom(32) #temp random number need to change
+            filepath = input("Enter the path of the file to upload: ")
+            if os.path.exists(filepath):
+                encrypted_data = encrypt_file(input_file, key)
+                response = send_to_server(encrypted_data)
+                print("Response from server:", response)
+            else:
+                print("File does not exist.")
+
+        elif choice == '6':
             print("Exiting...")
             break
 
