@@ -6,7 +6,8 @@ def main():
         print("1. Register")
         print("2. Login")
         print("3. Reset Password")
-        print("4. Exit")
+        print("4. Check Logs")
+        print("5. Exit")
         choice = input("Choose an option: ")
 
         if choice == '1':
@@ -25,6 +26,12 @@ def main():
             print(reset_password(username, new_password))
 
         elif choice == '4':
+            """need to be implemented."""
+            #1. For admistrator
+            #2. For user
+            #   2.1 user already logged in -> find username and do insert_log()
+            #   2.2 not logged in -> let user log in first.
+        elif choice == '5':
             print("Exiting...")
             break
 
