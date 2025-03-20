@@ -1,5 +1,5 @@
 import os
-import requests
+#import requests
 from user_management import login_user, reset_password
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
@@ -17,8 +17,9 @@ def encrypt_file(input_file, key):
 def send_to_server(encrypted_data):
     url = '{address}'  #server add
     files = {'file': ('encrypted_file.enc', encrypted_data)}
-    response = requests.post(url, files=files)
-    return response.text
+    print(encrypted_data)
+    #response = requests.post(url, files=files)
+    #return response.text
 
 def main():
     is_logged_in = False
@@ -40,7 +41,7 @@ def main():
             username = input("Enter username: ")
             password = input("Enter password: ")
             response = login_user(username, password)
-            if response == "Login successful":
+            if response == "Login successful.":
                 is_logged_in = True
                 print(response)
             else:

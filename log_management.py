@@ -21,8 +21,8 @@ class LogManagement:
             CREATE TABLE IF NOT EXISTS logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                username TEXT NOT NULL
-                action TEXT NOT NULL
+                username TEXT NOT NULL,
+                action TEXT NOT NULL,
                 content TEXT
             )
         """)

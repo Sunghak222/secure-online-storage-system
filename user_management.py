@@ -23,7 +23,7 @@ def register_user(username, password):
     conn.commit()
     conn.close()
     
-    log_manager.insert_log(username, "REGISTER")
+    log_manager.insert_log(username, "REGISTER" , "User registered successfully.")
     return "User registered successfully."
 
 def login_user(username, password):
