@@ -10,6 +10,23 @@ def hash_password(password):
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode(),salt)
 
+admin_username = "administrator"
+admin_password = "administrator"
+
+conn = connect_db()
+cursor = conn.cursor()
+cursor.execute("SELECT * FROM users WHERE username = ?", (admin_username,))
+if not cursor.fetchone():
+    hashed_password = hash_password(admin_password)
+    cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (admin_username, hashed_password,"administrator"))
+    conn.commit()
+    log_manager.insert_log(admin_username, "REGISTER", "Administrator account created.")
+    print("Administrator account created successfully.")
+else:
+    print("Administrator account already exists.")
+
+conn.close()
+
 def register_user(username, password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -19,11 +36,11 @@ def register_user(username, password):
         return "Username already exists."
 
     hashed_password = hash_password(password)
-    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+    cursor.execute("INSERT INTO users (username, password,role) VALUES (?, ?, ?)", (username, hashed_password,"basic"))
     conn.commit()
     conn.close()
     
-    log_manager.insert_log(username, "REGISTER" , "User registered successfully.")
+    log_manager.insert_log(username, "REGISTER" , "User registered successfully.")  
     return "User registered successfully."
 
 def login_user(username, password):
@@ -57,3 +74,16 @@ def reset_password(username, new_password):
 
     log_manager.insert_log(username, "CHANGE", "Password changed")
     return "Password reset successfully."
+
+def get_user_role(username):
+    conn = connect_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT role FROM users WHERE username = ?", (username,))
+    user_data = cursor.fetchone()
+    
+    conn.close()
+    
+    if user_data:
+        return user_data[0]  # 역할 반환
+    return None

@@ -37,6 +37,7 @@ class LogManagement:
     def get_log(self, username):
         """access for admistrator should be implemented"""
         self.cursor.execute("SELECT * FROM logs WHERE username = ?",(username,))
+        return self.cursor.fetchall()
 
     def close(self):
         """close db"""
