@@ -6,12 +6,9 @@ app = Flask(__name__)
 
 def decrypt_file(encrypted_data, key):
     try:
-        # Extract the initialization vector (IV) and ciphertext
+        cipher = AES.new(key, AES.MODE_CBC, iv)
         iv = encrypted_data[:16]  # Assuming AES block size of 16 bytes
         ciphertext = encrypted_data[16:]
-        
-        # Initialize the cipher
-        cipher = AES.new(key, AES.MODE_CBC, iv)
         
         # Decrypt data (also unpad)
         plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
