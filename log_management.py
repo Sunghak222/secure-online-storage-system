@@ -1,5 +1,6 @@
 import sqlite3
 import datetime
+from user_utils import get_user_role
 
 """
 1. action:
@@ -35,9 +36,17 @@ class LogManagement:
         self.conn.commit()
     
     def get_log(self, username):
-        """access for admistrator should be implemented"""
-        self.cursor.execute("SELECT * FROM logs WHERE username = ?",(username,))
-        return self.cursor.fetchall()
+        
+        role = get_user_role(username)
+        if role == "administrator":
+            self.cursor.execute("SELECT * FROM logs")
+        else:
+            self.cursor.execute("SELECT * FROM logs WHERE username = ?",(username,))
+        
+        rows = self.cursor.fetchall()
+        
+        return rows
+
 
     def close(self):
         """close db"""
