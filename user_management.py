@@ -75,15 +75,15 @@ def reset_password(username, new_password):
     log_manager.insert_log(username, "CHANGE", "Password changed")
     return "Password reset successfully."
 
-def get_user_role(username):
-    conn = connect_db()
-    cursor = conn.cursor()
+# def get_user_role(username):
+#     conn = connect_db()
+#     cursor = conn.cursor()
     
-    cursor.execute("SELECT role FROM users WHERE username = ?", (username,))
-    user_data = cursor.fetchone()
+#     cursor.execute("SELECT role FROM users WHERE username = ?", (username,))
+#     user_data = cursor.fetchone()
     
-    conn.close()
+#     conn.close()
     
-    if user_data:
-        return user_data[0]  # 역할 반환
-    return None
+#     if user_data:
+#         return user_data[0]
+#     return None
