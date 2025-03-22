@@ -1,5 +1,6 @@
 import os
-from user_management import login_user, reset_password, get_user_role,register_user
+from user_management import login_user, reset_password,register_user
+from user_utils import get_user_role
 from log_management import LogManagement
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
@@ -62,6 +63,7 @@ def main():
             username = "administrator" 
             logs = log_manager.get_log(username)
             if logs:
+                print("(ID, TIMESTAMP, USERNAME, ACTION, CONTENT)")
                 for log in logs:
                     print(log)
             else:
