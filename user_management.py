@@ -51,11 +51,9 @@ def login_user(username, password):
     user_data = cursor.fetchone()
     
     if user_data and bcrypt.checkpw(password.encode(), user_data[0]):
-        #insert LOGIN log into logs table
         log_manager.insert_log(username, "LOGIN", "Successful log in")
         return "Login successful."
     else:
-        #insert INVALID_LOGIN log into logs table
         log_manager.insert_log(username, "INVALID_LOGIN", "Invalid log in")
         return "Invalid username or password."
 
