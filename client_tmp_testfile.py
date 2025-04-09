@@ -3,11 +3,11 @@ from user_management import login_user, reset_password, register_user
 from user_utils import get_user_role
 from log_management import LogManagement
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 import requests
 
 # Define a fixed 32-byte key (for testing purposes)
-AES_KEY = b"thisisaverysecurekey123456789012"  # need to consider how to not hard coding this key!!
+AES_KEY = os.urandom(32)  # Securely generate a random key for each session
 
 def encrypt_file(input_file):
     cipher = AES.new(AES_KEY, AES.MODE_CBC)
@@ -17,14 +17,31 @@ def encrypt_file(input_file):
     
     ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
     
+    # Return the IV concatenated with the ciphertext
     return iv + ciphertext
+
+def decrypt_file(encrypted_data):
+    iv = encrypted_data[:16]  # Extract the IV
+    ciphertext = encrypted_data[16:]
+    cipher = AES.new(AES_KEY, AES.MODE_CBC, iv)
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    return plaintext
 
 def send_to_server(encrypted_data, original_filename):
     url = 'http://127.0.0.1:5000/upload'
-    
     files = { 'file': (f"{original_filename}.enc", encrypted_data) }
     response = requests.post(url, files=files)
     return response.text
+
+def download_file(filename):
+    url = f'http://127.0.0.1:5000/download/{filename}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        encrypted_data = response.content
+        decrypted_data = decrypt_file(encrypted_data)
+        return decrypted_data
+    else:
+        print("Error downloading file:", response.text)
 
 def main():
     is_logged_in = False
@@ -40,9 +57,10 @@ def main():
             if is_admin:
                 print("3. Check Logs")
                 print("4. Register")
-            print("5. File Send")
+            print("5. Upload File")
+            print("6. Download File")
                 
-        print("6. Exit")
+        print("7. Exit")
         choice = input("Choose an option: ")
 
         if not is_logged_in and choice == '1':
@@ -62,7 +80,6 @@ def main():
 
         elif is_logged_in and is_admin and choice == '3':
             log_manager = LogManagement()
-            username = "administrator" 
             logs = log_manager.get_log(username)
             if logs:
                 print("(ID, TIMESTAMP, USERNAME, ACTION, CONTENT)")
@@ -82,12 +99,22 @@ def main():
             else:
                 print("File does not exist.")
 
-        elif choice == '4':
+        elif is_logged_in and choice == '6':
+            filename = input("Enter the name of the file to download (with .enc extension): ")
+            decrypted_data = download_file(filename)
+            if decrypted_data:
+                download_dir = "./Download"
+                os.makedirs(download_dir, exist_ok=True)  # Create Download directory if it doesn't exist
+                with open(os.path.join(download_dir, f"decrypted_{filename[:-4]}"), "wb") as f:
+                    f.write(decrypted_data)
+                print(f"File downloaded and decrypted as {os.path.join(download_dir, f'decrypted_{filename[:-4]}')}")
+
+        elif is_logged_in and choice == '4':
             username = input("Enter username: ")
             password = input("Enter password: ")
             print(register_user(username, password))
 
-        elif choice == '6':
+        elif choice == '7':
             print("Exiting...")
             break
 
