@@ -4,9 +4,13 @@ from user_utils import get_user_role
 from log_management import LogManagement
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
+import requests
 
-def encrypt_file(input_file, key):
-    cipher = AES.new(key, AES.MODE_CBC)
+# Define a fixed 32-byte key (for testing purposes)
+AES_KEY = b"thisisaverysecurekey123456789012"  # Ensure this is exactly 32 bytes
+
+def encrypt_file(input_file):
+    cipher = AES.new(AES_KEY, AES.MODE_CBC)
     iv = cipher.iv
     with open(input_file, 'rb') as f:
         plaintext = f.read()
@@ -16,16 +20,16 @@ def encrypt_file(input_file, key):
     return iv + ciphertext
 
 def send_to_server(encrypted_data):
-    url = '{address}'  # 서버 주소
+    url = 'http://127.0.0.1:5000/upload'
     files = {'file': ('encrypted_file.enc', encrypted_data)}
     print(encrypted_data)
-    # response = requests.post(url, files=files)
-    # return response.text
+    response = requests.post(url, files=files)
+    return response.text
 
 def main():
     is_logged_in = False
     username = ''
-    is_admin = False  # 관리자 여부 초기화
+    is_admin = False  
 
     while True:
         print("\nUser Management System")
@@ -33,7 +37,7 @@ def main():
             print("1. Login")
         else:
             print("2. Reset Password")
-            if is_admin:  # 관리자일 때만 로그 확인 옵션 표시
+            if is_admin:
                 print("3. Check Logs")
                 print("4. Register")
             print("5. File Send")
@@ -74,7 +78,7 @@ def main():
             key = os.urandom(32)  # tmp random key
             filepath = input("Enter the path of the file to upload: ")
             if os.path.exists(filepath):
-                encrypted_data = encrypt_file(filepath, key)
+                encrypted_data = encrypt_file(filepath)
                 response = send_to_server(encrypted_data)
                 print("Response from server:", response)
             else:

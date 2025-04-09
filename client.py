@@ -1,4 +1,5 @@
 from user_management import register_user, login_user, reset_password
+import os
 
 def encrypt_file(input_file, key): #CAN CHANGE TO OTHER METHOD (TEMP STRUCTURE)
     cipher = AES.new(key, AES.MODE_CBC)
