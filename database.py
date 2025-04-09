@@ -13,7 +13,8 @@ def create_users_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL
+            role TEXT NOT NULL,
+            secret TEXT NOT NULL
         )
     ''')
     
