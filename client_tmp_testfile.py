@@ -1,10 +1,11 @@
 import os
 from user_management import login_user, reset_password, register_user
-from user_utils import get_user_role
+from user_utils import get_user_role, get_user_secret
 from log_management import LogManagement
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import requests
+import pyotp
 
 # Define a fixed 32-byte key (for testing purposes)
 AES_KEY = os.urandom(32)  # Securely generate a random key for each session
@@ -49,6 +50,9 @@ def main():
     is_admin = False  
 
     while True:
+        #initalize log manageer
+        log_manager = LogManagement()
+        
         print("\nUser Management System")
         if not is_logged_in:
             print("1. Login")
@@ -68,18 +72,42 @@ def main():
             password = input("Enter password: ")
             response = login_user(username, password)
             if response == "Login successful.":
-                is_logged_in = True
-                is_admin = get_user_role(username) == 'administrator'
-                print(response)
+                #otp verification
+                user_secret = get_user_secret(username)
+                user_otp = input("Enter the 6-digit OTP from your Authenticator app: ")
+
+                totp = pyotp.TOTP(user_secret)
+
+                #verify otp
+                #when log in, log should be inserted explicitly 
+                # because whether log in is successful or not is not determined in user_management
+                if totp.verify(user_otp):
+                    is_logged_in = True
+                    is_admin = get_user_role(username) == 'administrator'
+                    log_manager.insert_log(username, "LOGIN", "Successful log in")
+                    print(response)
+                else:
+                    is_logged_in = False
+                    log_manager.insert_log(username, "INVALID_OTP", "Invalid OTP")
             else:
+                log_manager.insert_log(username, "INVALID_LOGIN", "Invalid log in")
                 print("Login failed. Please try again.")
 
         elif is_logged_in and choice == '2':
             new_password = input("Enter new password: ")
-            print(reset_password(username, new_password))
+
+            user_secret = get_user_secret(username)
+            user_otp = input("Enter the 6-digit OTP from your Authenticator app: ")
+
+            totp = pyotp.TOTP(user_secret)
+            if totp.verify(user_otp):
+                print(reset_password(username, new_password))
+                log_manager.insert_log(username, "CHANGE", "Password changed successfully.")
+            else:
+                print("Invalid OTP. Password reset rejected.")
+                log_manager.insert_log(username, "FAILED_CHANGE", "Password reset failed due to invalid OTP.")
 
         elif is_logged_in and is_admin and choice == '3':
-            log_manager = LogManagement()
             logs = log_manager.get_log(username)
             if logs:
                 print("(ID, TIMESTAMP, USERNAME, ACTION, CONTENT)")
@@ -87,7 +115,6 @@ def main():
                     print(log)
             else:
                 print("No logs found for this user.")
-            log_manager.close()
 
         elif is_logged_in and choice == '5':
             filepath = input("Enter the path of the file to upload: ")
@@ -96,8 +123,11 @@ def main():
                 original_filename = os.path.basename(filepath)  # Get the original filename
                 response = send_to_server(encrypted_data, original_filename)
                 print("Response from server:", response)
+
+                log_manager.insert_log(username, "UPLOAD", "File uploaded.")
             else:
                 print("File does not exist.")
+                log_manager.insert_log(username, "UPLOAD_FAIL", "File cannot be uploaded.")
 
         elif is_logged_in and choice == '6':
             filename = input("Enter the name of the file to download (with .enc extension): ")
@@ -108,6 +138,7 @@ def main():
                 with open(os.path.join(download_dir, f"decrypted_{filename[:-4]}"), "wb") as f:
                     f.write(decrypted_data)
                 print(f"File downloaded and decrypted as {os.path.join(download_dir, f'decrypted_{filename[:-4]}')}")
+                log_manager.insert_log(username, "DOWNLOAD", "File downloaded.")
 
         elif is_logged_in and choice == '4':
             username = input("Enter username: ")
@@ -116,10 +147,13 @@ def main():
 
         elif choice == '7':
             print("Exiting...")
+            log_manager.insert_log(username, "LOGOUT", "User log out")
             break
 
         else:
             print("Invalid choice. Please try again.")
+        log_manager.close()
+        
 
 if __name__ == "__main__":
     main()
