@@ -1,5 +1,5 @@
 import os
-from user_management import login_user, reset_password,register_user
+from user_management import login_user, reset_password, register_user
 from user_utils import get_user_role
 from log_management import LogManagement
 from Crypto.Cipher import AES
@@ -7,7 +7,7 @@ from Crypto.Util.Padding import pad
 import requests
 
 # Define a fixed 32-byte key (for testing purposes)
-AES_KEY = b"thisisaverysecurekey123456789012"  # Ensure this is exactly 32 bytes
+AES_KEY = b"thisisaverysecurekey123456789012"  # need to consider how to not hard coding this key!!
 
 def encrypt_file(input_file):
     cipher = AES.new(AES_KEY, AES.MODE_CBC)
@@ -19,10 +19,10 @@ def encrypt_file(input_file):
     
     return iv + ciphertext
 
-def send_to_server(encrypted_data):
+def send_to_server(encrypted_data, original_filename):
     url = 'http://127.0.0.1:5000/upload'
-    files = {'file': ('encrypted_file.enc', encrypted_data)}
-    print(encrypted_data)
+    
+    files = { 'file': (f"{original_filename}.enc", encrypted_data) }
     response = requests.post(url, files=files)
     return response.text
 
@@ -42,7 +42,6 @@ def main():
                 print("4. Register")
             print("5. File Send")
                 
-        
         print("6. Exit")
         choice = input("Choose an option: ")
 
@@ -52,7 +51,6 @@ def main():
             response = login_user(username, password)
             if response == "Login successful.":
                 is_logged_in = True
-                
                 is_admin = get_user_role(username) == 'administrator'
                 print(response)
             else:
@@ -75,11 +73,11 @@ def main():
             log_manager.close()
 
         elif is_logged_in and choice == '5':
-            key = os.urandom(32)  # tmp random key
             filepath = input("Enter the path of the file to upload: ")
             if os.path.exists(filepath):
                 encrypted_data = encrypt_file(filepath)
-                response = send_to_server(encrypted_data)
+                original_filename = os.path.basename(filepath)  # Get the original filename
+                response = send_to_server(encrypted_data, original_filename)
                 print("Response from server:", response)
             else:
                 print("File does not exist.")
