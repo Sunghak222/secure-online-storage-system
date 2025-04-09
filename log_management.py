@@ -7,7 +7,14 @@ from user_utils import get_user_role
    - REGISTER
    - LOGIN
    - INVALID_LOGIN
+   - INVALID OTP
    - CHANGE : change password
+   - FAILED_CHANGE : change failed
+   - UPLOAD
+   - UPLOAD_FAIL
+   - DOWNLOAD 
+   - DOWNLOAD_FAIL
+   - LOGOUT
 """
 class LogManagement:
     def __init__(self, name = "logs.db"):
