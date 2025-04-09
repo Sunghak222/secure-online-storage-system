@@ -1,6 +1,7 @@
 from database import create_users_table, connect_db
 from log_management import LogManagement
 import bcrypt
+import pyotp
 
 create_users_table()
 
@@ -18,9 +19,11 @@ cursor = conn.cursor()
 cursor.execute("SELECT * FROM users WHERE username = ?", (admin_username,))
 if not cursor.fetchone():
     hashed_password = hash_password(admin_password)
-    cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (admin_username, hashed_password,"administrator"))
+    admin_secret = pyotp.random_base32()
+    cursor.execute("INSERT INTO users (username, password, role, secret) VALUES (?, ?, ?, ?)", (admin_username, hashed_password, "administrator", admin_secret))
     conn.commit()
     log_manager.insert_log(admin_username, "REGISTER", "Administrator account created.")
+    print("User registered successfully.\nYour OTP key is " + admin_secret) #gotta tell secret to user
     print("Administrator account created successfully.")
 else:
     print("Administrator account already exists.")
@@ -36,12 +39,15 @@ def register_user(username, password):
         return "Username already exists."
 
     hashed_password = hash_password(password)
-    cursor.execute("INSERT INTO users (username, password,role) VALUES (?, ?, ?)", (username, hashed_password,"basic"))
+    secret = pyotp.random_base32() #secret key for otp
+
+    cursor.execute("INSERT INTO users (username, password,role, secret) VALUES (?, ?, ?, ?)", 
+                   (username, hashed_password,"basic", secret))
     conn.commit()
     conn.close()
     
     log_manager.insert_log(username, "REGISTER" , "User registered successfully.")  
-    return "User registered successfully."
+    return f"User registered successfully.\nYour OTP key is {secret}" #gotta tell secret to user
 
 def login_user(username, password):
     conn = connect_db()
@@ -51,10 +57,8 @@ def login_user(username, password):
     user_data = cursor.fetchone()
     
     if user_data and bcrypt.checkpw(password.encode(), user_data[0]):
-        log_manager.insert_log(username, "LOGIN", "Successful log in")
         return "Login successful."
     else:
-        log_manager.insert_log(username, "INVALID_LOGIN", "Invalid log in")
         return "Invalid username or password."
 
 def reset_password(username, new_password):
@@ -65,23 +69,11 @@ def reset_password(username, new_password):
     if cursor.fetchone() is None:
         return "User does not exist."
     
+    secret = pyotp.random_base32()
+
     hashed_password = hash_password(new_password)
-    cursor.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_password, username))
+    cursor.execute("UPDATE users SET password = ?, secret = ? WHERE username = ?", (hashed_password, secret, username))
     conn.commit()
     conn.close()
 
-    log_manager.insert_log(username, "CHANGE", "Password changed")
     return "Password reset successfully."
-
-# def get_user_role(username):
-#     conn = connect_db()
-#     cursor = conn.cursor()
-    
-#     cursor.execute("SELECT role FROM users WHERE username = ?", (username,))
-#     user_data = cursor.fetchone()
-    
-#     conn.close()
-    
-#     if user_data:
-#         return user_data[0]
-#     return None
