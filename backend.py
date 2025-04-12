@@ -1,11 +1,16 @@
 from flask import Flask, request, send_file, jsonify
 import os
+import re
 
 app = Flask(__name__)
 
 # Ensure the directory for storing encrypted files exists
 ENCRYPTED_FILES_DIR = "./encrypted_files"
 os.makedirs(ENCRYPTED_FILES_DIR, exist_ok=True)
+
+def is_safe_filename(filename):
+    # Use a regex to allow only alphanumeric characters, underscores, and dots
+    return re.match(r'^[\w\-. ]+$', filename) is not None
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -28,6 +33,10 @@ def upload_file():
 @app.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
     try:
+        # Validate the filename
+        if not is_safe_filename(filename):
+            return "Invalid filename", 400
+
         file_path = os.path.join(ENCRYPTED_FILES_DIR, filename)
         if not os.path.exists(file_path):
             return "File not found", 404
