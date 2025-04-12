@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 import os
 
 app = Flask(__name__)
@@ -35,6 +35,14 @@ def download_file(filename):
         return send_file(file_path)
     except Exception as e:
         return f"Error downloading file: {e}", 500
+
+@app.route('/files', methods=['GET'])
+def list_files():
+    try:
+        files = os.listdir(ENCRYPTED_FILES_DIR)
+        return jsonify(files), 200
+    except Exception as e:
+        return f"Error listing files: {e}", 500
 
 if __name__ == "__main__":
     app.run(debug=True)

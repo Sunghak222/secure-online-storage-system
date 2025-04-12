@@ -30,7 +30,7 @@ def decrypt_file(encrypted_data):
 
 def send_to_server(encrypted_data, original_filename):
     url = 'http://127.0.0.1:5000/upload'
-    files = { 'file': (f"{original_filename}.enc", encrypted_data) }
+    files = {'file': (f"{original_filename}.enc", encrypted_data)}
     response = requests.post(url, files=files)
     return response.text
 
@@ -44,13 +44,22 @@ def download_file(filename):
     else:
         print("Error downloading file:", response.text)
 
+def list_files():
+    url = 'http://127.0.0.1:5000/files'
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()  # Returns a list of filenames
+    else:
+        print("Error retrieving file list:", response.text)
+        return []
+
 def main():
     is_logged_in = False
     username = ''
     is_admin = False  
 
     while True:
-        #initalize log manageer
+        # Initialize log manager
         log_manager = LogManagement()
         
         print("\nUser Management System")
@@ -72,15 +81,13 @@ def main():
             password = input("Enter password: ")
             response = login_user(username, password)
             if response == "Login successful.":
-                #otp verification
+                # OTP verification
                 user_secret = get_user_secret(username)
                 user_otp = input("Enter the 6-digit OTP from your Authenticator app: ")
 
                 totp = pyotp.TOTP(user_secret)
 
-                #verify otp
-                #when log in, log should be inserted explicitly 
-                # because whether log in is successful or not is not determined in user_management
+                # Verify OTP
                 if totp.verify(user_otp):
                     is_logged_in = True
                     is_admin = get_user_role(username) == 'administrator'
@@ -89,6 +96,7 @@ def main():
                 else:
                     is_logged_in = False
                     log_manager.insert_log(username, "INVALID_OTP", "Invalid OTP")
+                    print("Wrong OTP Number")
             else:
                 log_manager.insert_log(username, "INVALID_LOGIN", "Invalid log in")
                 print("Login failed. Please try again.")
@@ -123,22 +131,29 @@ def main():
                 original_filename = os.path.basename(filepath)  # Get the original filename
                 response = send_to_server(encrypted_data, original_filename)
                 print("Response from server:", response)
-
                 log_manager.insert_log(username, "UPLOAD", "File uploaded.")
             else:
                 print("File does not exist.")
                 log_manager.insert_log(username, "UPLOAD_FAIL", "File cannot be uploaded.")
 
         elif is_logged_in and choice == '6':
+            print("Available files for download:")
+            files = list_files()
+            for file in files:
+                print(file)
+
             filename = input("Enter the name of the file to download (with .enc extension): ")
-            decrypted_data = download_file(filename)
-            if decrypted_data:
-                download_dir = "./Download"
-                os.makedirs(download_dir, exist_ok=True)  # Create Download directory if it doesn't exist
-                with open(os.path.join(download_dir, f"decrypted_{filename[:-4]}"), "wb") as f:
-                    f.write(decrypted_data)
-                print(f"File downloaded and decrypted as {os.path.join(download_dir, f'decrypted_{filename[:-4]}')}")
-                log_manager.insert_log(username, "DOWNLOAD", "File downloaded.")
+            if filename in files:
+                decrypted_data = download_file(filename)
+                if decrypted_data:
+                    download_dir = "./Download"
+                    os.makedirs(download_dir, exist_ok=True)  # Create Download directory if it doesn't exist
+                    with open(os.path.join(download_dir, f"decrypted_{filename[:-4]}"), "wb") as f:
+                        f.write(decrypted_data)
+                    print(f"File downloaded and decrypted as {os.path.join(download_dir, f'decrypted_{filename[:-4]}')}")
+                    log_manager.insert_log(username, "DOWNLOAD", "File downloaded.")
+            else:
+                print("File not found on the server.")
 
         elif is_logged_in and choice == '4':
             username = input("Enter username: ")
@@ -153,7 +168,6 @@ def main():
         else:
             print("Invalid choice. Please try again.")
         log_manager.close()
-        
 
 if __name__ == "__main__":
     main()
