@@ -1,6 +1,6 @@
 import sqlite3
 
-class FileAccessManager:
+class FileManager:
     def __init__(self, db_name="files.db"):
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
@@ -28,6 +28,19 @@ class FileAccessManager:
                OR (shared_name = ? AND filename = ?)
         """, (username, filename, username, filename))
         return self.cursor.fetchone() is not None
+
+    def get_files_shared_with(self, recipient):
+        self.cursor.execute("""
+            SELECT filename FROM shared_files WHERE shared_name = ?
+        """, (recipient,))
+        return [row[0] for row in self.cursor.fetchall()]
+    
+    def is_owner(self, username, filename):
+        self.cursor.execute("""
+            SELECT 1 FROM shared_files WHERE owner = ? AND filename = ?
+        """, (username, filename))
+        return self.cursor.fetchone() is not None
+
 
     def close(self):
         self.conn.close()
