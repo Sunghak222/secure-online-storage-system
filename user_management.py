@@ -69,10 +69,9 @@ def reset_password(username, new_password):
     if cursor.fetchone() is None:
         return "User does not exist."
     
-    secret = pyotp.random_base32()
-
     hashed_password = hash_password(new_password)
-    cursor.execute("UPDATE users SET password = ?, secret = ? WHERE username = ?", (hashed_password, secret, username))
+    cursor.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_password, username))
+
     conn.commit()
     conn.close()
 
