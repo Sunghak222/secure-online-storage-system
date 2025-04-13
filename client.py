@@ -65,6 +65,16 @@ def delete_file(username):
         print("Error deleting file:", response.text)
         return response.status_code
 
+def share_file(owner, filename, recipient):
+    url = 'http://127.0.0.1:5000/share'
+    data = {
+        'owner': owner,
+        'filename': filename,
+        'recipient': recipient
+    }
+    response = requests.post(url, data=data)
+    return response
+
 def main():
     is_logged_in = False
     username = ''
@@ -85,8 +95,9 @@ def main():
             print("5. Upload File")
             print("6. Download File")
             print("7. Delete File")  # Add option for deleting files
-                
-        print("8. Exit")
+            print("8. Share File")  # share
+        print("9. Exit")
+
         choice = input("Choose an option: ")
 
         if not is_logged_in and choice == '1':
@@ -174,8 +185,27 @@ def main():
                 log_manager.insert_log(username, "DELETE", "file deleted")
             else:
                 log_manager.insert_log(username, "DELETE_FAILED", "deletion failed")
-
-        elif choice == '8':
+        elif is_logged_in and choice == '8':
+            print("Available files for sharing:")
+            files = list_files(username)
+            for file in files:
+                print(file)
+            
+            filename = input("Enter the name of the file to share (with .enc extension): ")
+            if filename not in files:
+                print("File not found or you don't have access.")
+                log_manager.insert_log(username, "SHARE_FAIL", "File not found or unauthorized.")
+            else:
+                recipient = input("Enter the username to share with: ")
+                response = share_file(username, filename, recipient)
+                if response.status_code == 200:
+                    print("File shared successfully.")
+                    log_manager.insert_log(username, "SHARE", f"Shared {filename} with {recipient}")
+                else:
+                    print("Sharing failed:", response.text)
+                    log_manager.insert_log(username, "SHARE_FAIL", f"Failed to share")
+                    
+        elif choice == '9':
             print("Exiting...")
             log_manager.insert_log(username, "LOGOUT", "User log out")
             break
