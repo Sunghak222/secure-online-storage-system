@@ -60,8 +60,10 @@ def delete_file(username):
     response = requests.delete(url)
     if response.status_code == 200:
         print(response.text)
+        return response.status_code
     else:
         print("Error deleting file:", response.text)
+        return response.status_code
 
 def main():
     is_logged_in = False
@@ -167,7 +169,11 @@ def main():
                 print("File not found on the server.")
 
         elif is_logged_in and choice == '7':
-            delete_file(username)  # Call the delete function
+            response = delete_file(username)  # Call the delete function
+            if (response == 200):
+                log_manager.insert_log(username, "DELETE", "file deleted")
+            else:
+                log_manager.insert_log(username, "DELETE_FAILED", "deletion failed")
 
         elif choice == '8':
             print("Exiting...")
