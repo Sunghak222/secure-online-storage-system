@@ -24,9 +24,16 @@ class FileManager:
     def has_access(self, username, filename):
         self.cursor.execute("""
             SELECT 1 FROM shared_files 
-            WHERE (owner = ? AND filename = ?) 
-               OR (shared_name = ? AND filename = ?)
-        """, (username, filename, username, filename))
+            WHERE owner = ? AND filename = ?
+        """, (username, filename))
+
+        if self.cursor.fetchone():
+            return True
+        
+        self.cursor.execute("""
+            SELECT 1 FROM shared_files 
+            WHERE shared_name = ? AND filename = ?
+        """, (username, filename))
         return self.cursor.fetchone() is not None
 
     def get_files_shared_with(self, recipient):
