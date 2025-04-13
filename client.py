@@ -28,10 +28,11 @@ def decrypt_file(encrypted_data):
     plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
     return plaintext
 
-def send_to_server(encrypted_data, original_filename):
+def send_to_server(encrypted_data, original_filename, username):
     url = 'http://127.0.0.1:5000/upload'
     files = {'file': (f"{original_filename}.enc", encrypted_data)}
-    response = requests.post(url, files=files)
+    data = {'username': username}  # Include the username in the request
+    response = requests.post(url, files=files, data=data)
     return response.text
 
 def download_file(filename):
@@ -44,8 +45,8 @@ def download_file(filename):
     else:
         print("Error downloading file:", response.text)
 
-def list_files():
-    url = 'http://127.0.0.1:5000/files'
+def list_files(username):
+    url = f'http://127.0.0.1:5000/files/{username}'  # Include username in the URL
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()  # Returns a list of filenames
@@ -129,7 +130,7 @@ def main():
             if os.path.exists(filepath):
                 encrypted_data = encrypt_file(filepath)
                 original_filename = os.path.basename(filepath)  # Get the original filename
-                response = send_to_server(encrypted_data, original_filename)
+                response = send_to_server(encrypted_data, original_filename, username)  # Pass username
                 print("Response from server:", response)
                 log_manager.insert_log(username, "UPLOAD", "File uploaded.")
             else:
@@ -138,7 +139,7 @@ def main():
 
         elif is_logged_in and choice == '6':
             print("Available files for download:")
-            files = list_files()
+            files = list_files(username)  # Pass username
             for file in files:
                 print(file)
 
