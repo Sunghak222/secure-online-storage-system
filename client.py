@@ -35,8 +35,8 @@ def send_to_server(encrypted_data, original_filename, username):
     response = requests.post(url, files=files, data=data)
     return response.text
 
-def download_file(filename):
-    url = f'http://127.0.0.1:5000/download/{filename}'
+def download_file(username, filename):
+    url = f'http://127.0.0.1:5000/download/{username}/{filename}'
     response = requests.get(url)
     if response.status_code == 200:
         encrypted_data = response.content
@@ -53,6 +53,15 @@ def list_files(username):
     else:
         print("Error retrieving file list:", response.text)
         return []
+
+def delete_file(username):
+    filename = input("Enter the name of the file to delete: ")
+    url = f'http://127.0.0.1:5000/delete/{username}/{filename}'
+    response = requests.delete(url)
+    if response.status_code == 200:
+        print(response.text)
+    else:
+        print("Error deleting file:", response.text)
 
 def main():
     is_logged_in = False
@@ -73,8 +82,9 @@ def main():
                 print("4. Register")
             print("5. Upload File")
             print("6. Download File")
+            print("7. Delete File")  # Add option for deleting files
                 
-        print("7. Exit")
+        print("8. Exit")
         choice = input("Choose an option: ")
 
         if not is_logged_in and choice == '1':
@@ -145,7 +155,7 @@ def main():
 
             filename = input("Enter the name of the file to download (with .enc extension): ")
             if filename in files:
-                decrypted_data = download_file(filename)
+                decrypted_data = download_file(username, filename)  # Pass username
                 if decrypted_data:
                     download_dir = "./Download"
                     os.makedirs(download_dir, exist_ok=True)  # Create Download directory if it doesn't exist
@@ -156,15 +166,18 @@ def main():
             else:
                 print("File not found on the server.")
 
+        elif is_logged_in and choice == '7':
+            delete_file(username)  # Call the delete function
+
+        elif choice == '8':
+            print("Exiting...")
+            log_manager.insert_log(username, "LOGOUT", "User log out")
+            break
+        
         elif is_logged_in and choice == '4':
             username = input("Enter username: ")
             password = input("Enter password: ")
             print(register_user(username, password))
-
-        elif choice == '7':
-            print("Exiting...")
-            log_manager.insert_log(username, "LOGOUT", "User log out")
-            break
 
         else:
             print("Invalid choice. Please try again.")

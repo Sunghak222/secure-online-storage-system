@@ -4,8 +4,9 @@ import re
 
 app = Flask(__name__)
 
-# Base directory for storing user files
+# Ensure the directory for storing encrypted files exists
 BASE_DIR = "./encrypted_files"
+os.makedirs(BASE_DIR, exist_ok=True)
 
 def is_safe_filename(filename):
     # Use a regex to allow only alphanumeric characters, underscores, and dots
@@ -65,6 +66,24 @@ def list_files(username):
         return jsonify(files), 200
     except Exception as e:
         return f"Error listing files: {e}", 500
+
+@app.route('/delete/<username>/<filename>', methods=['DELETE'])
+def delete_file(username, filename):
+    try:
+        # Validate the filename
+        if not is_safe_filename(filename):
+            return "Invalid filename", 400
+
+        user_dir = get_user_directory(username)
+        file_path = os.path.join(user_dir, filename)
+
+        if not os.path.exists(file_path):
+            return "File not found", 404
+
+        os.remove(file_path)  # Delete the file
+        return "File deleted successfully!", 200
+    except Exception as e:
+        return f"Error deleting file: {e}", 500
 
 if __name__ == "__main__":
     app.run(debug=True)
